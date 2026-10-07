@@ -829,6 +829,10 @@ void OSXComputer::leave()
     // a client (onMouseMove reads raw deltas instead). must follow hideCursor(),
     // which re-associates. re-coupled in enter()/disable().
     CGAssociateMouseAndMouseCursorPosition(false);
+
+    // park at the main display center, the cursor can't be hidden over the menu bar or dock
+    m_parkedCursor = CGPointMake(m_xCenter, m_yCenter);
+    CGWarpMouseCursorPosition(m_parkedCursor);
   }
 
   // now off computer
@@ -1018,6 +1022,16 @@ bool OSXComputer::onMouseMove(CGEventRef event)
     int32_t dy = (int32_t)CGEventGetIntegerValueField(event, kCGMouseEventDeltaY);
 
     LOG_VERBOSE("mouse delta %+d,%+d", dx, dy);
+
+    // the capture can be undone by a foreground app, so pin the cursor if it drifts
+    CGEventRef liveEvent = CGEventCreate(nullptr);
+    const CGPoint live = CGEventGetLocation(liveEvent);
+    CFRelease(liveEvent);
+    if (live.x != m_parkedCursor.x || live.y != m_parkedCursor.y) {
+      LOG_DEBUG("cursor drifted while away, pinning: %+f,%+f", live.x, live.y);
+      CGWarpMouseCursorPosition(m_parkedCursor);
+      CGAssociateMouseAndMouseCursorPosition(false);
+    }
 
     if (dx != 0 || dy != 0) {
       sendEvent(EventTypes::PrimaryComputerMotionOnSecondary, MotionInfo::alloc(dx, dy));

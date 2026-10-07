@@ -251,6 +251,7 @@ private:
   std::vector<MouseButtonEventMapType> MouseButtonEventMap;
 
   bool m_cursorHidden;
+  CGPoint m_parkedCursor = CGPointZero;
 
   // keyboard stuff
   OSXKeyState *m_keyState;

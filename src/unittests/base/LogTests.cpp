@@ -120,4 +120,52 @@ void LogTests::printErrWithFileAndLine()
   QCOMPARE(string, "ERROR: test message test file:123");
 }
 
+void LogTests::printBufferBoundary_data()
+{
+  QTest::addColumn<int>("length");
+  QTest::newRow("fits-with-nul") << 1023;
+  QTest::newRow("needs-nul-byte") << 1024;
+  QTest::newRow("needs-larger-buffer") << 1025;
+}
+
+void LogTests::printBufferBoundary()
+{
+  QFETCH(int, length);
+  const std::string message(static_cast<size_t>(length), 'x');
+  std::stringstream buffer;
+  std::streambuf *old = std::cout.rdbuf(buffer.rdbuf());
+  m_log.print(nullptr, 0, LEVEL_PRINT "%s", message.c_str());
+  std::cout.rdbuf(old);
+  QCOMPARE(buffer.str(), message);
+}
+
+void LogTests::printWideEncodingError()
+{
+  const std::string previousLocale = std::setlocale(LC_CTYPE, nullptr);
+  std::setlocale(LC_CTYPE, "C");
+  bool caught = false;
+  std::string error;
+  try {
+    // Same narrow printf + wide non-ASCII input as the original watchdog INFO log.
+    m_log.print(nullptr, 0, LEVEL_INFO "running command: %ls", L"C:\\Users\\\uD608\uC561\uAC80\uC0AC");
+  } catch (const std::runtime_error &e) {
+    caught = true;
+    error = e.what();
+  }
+  std::setlocale(LC_CTYPE, previousLocale.c_str());
+  QVERIFY(caught);
+  QVERIFY(error.find("log formatting failed") != std::string::npos);
+  QVERIFY(error.find("errno=") != std::string::npos);
+}
+
+void LogTests::printUtf8Command()
+{
+  const auto command = QString::fromWCharArray(L"C:\\Users\\\uD608\uC561\uAC80\uC0AC").toUtf8();
+  std::stringstream buffer;
+  std::streambuf *old = std::cout.rdbuf(buffer.rdbuf());
+  m_log.print(nullptr, 0, LEVEL_PRINT "%s", command.constData());
+  std::cout.rdbuf(old);
+  QCOMPARE(QByteArray::fromStdString(buffer.str()), command);
+}
+
 QTEST_MAIN(LogTests)

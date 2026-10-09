@@ -21,6 +21,10 @@ private Q_SLOTS:
   void printLevelToHigh();
   void printInfoWithFileAndLine();
   void printErrWithFileAndLine();
+  void printBufferBoundary_data();
+  void printBufferBoundary();
+  void printWideEncodingError();
+  void printUtf8Command();
 
 private:
   Log m_log;

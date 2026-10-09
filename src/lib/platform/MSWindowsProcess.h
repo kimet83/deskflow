@@ -10,6 +10,7 @@
 #include <Windows.h>
 
 #include <string>
+#include <string_view>
 
 namespace deskflow::platform {
 
@@ -41,6 +42,10 @@ public:
   /// Launch @p command as a detached process under the active console user's token, so the
   /// child does not inherit the caller's (SYSTEM) privileges.
   static bool startDetachedAsSessionUser(const std::wstring &command);
+
+  /// Decode a UTF-8 command without changing quoting or arguments. Empty clears the watchdog.
+  /// Throws on invalid UTF-8, embedded NUL, or a command exceeding the Win32 UTF-16 limit.
+  static std::wstring commandFromUtf8(std::string_view command);
 
 private:
   void setStartupInfo(STARTUPINFO &si);

@@ -58,9 +58,9 @@ jobs:
           QT_QPA_PLATFORM: offscreen
         shell: pwsh
         run: |
-          & ./build/src/unittests/base/LogTests.exe -o log-regression.xml,junit
+          & ./build/src/unittests/base/LogTests.exe -o log-regression.xml,junitxml
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          & ./build/src/unittests/platform/MSWindowsProcessTests.exe -o process-regression.xml,junit
+          & ./build/src/unittests/platform/MSWindowsProcessTests.exe -o process-regression.xml,junitxml
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Package MSI and portable ZIP

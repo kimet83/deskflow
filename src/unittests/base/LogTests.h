@@ -25,6 +25,7 @@ private Q_SLOTS:
   void printBufferBoundary();
   void printWideEncodingError();
   void printUtf8Command();
+  void printInfoFilter();
 
 private:
   Log m_log;

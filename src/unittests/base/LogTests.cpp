@@ -28,9 +28,11 @@ public:
   bool write(LogLevel::Level, const QString &message) override
   {
     m_message = message;
+    ++m_writes;
     return false;
   }
   QString m_message;
+  int m_writes = 0;
 };
 } // namespace
 
@@ -188,6 +190,26 @@ void LogTests::printUtf8Command()
   const auto message = capture->m_message;
   m_log.pop_front();
   QCOMPARE(message.toUtf8(), command);
+}
+
+void LogTests::printInfoFilter()
+{
+  const auto previousFilter = m_log.getFilter();
+  m_log.setFilter(LogLevel::Level::Info);
+  auto *capture = new CapturingLogOutputter; // Adopted by Log.
+  m_log.insert(capture);
+
+  m_log.print(nullptr, 0, CLOG_TAG_DEBUG "debug mouse position: %d,%d", 10, 20);
+  m_log.print(nullptr, 0, CLOG_TAG_VERBOSE "verbose mouse position: %d,%d", 10, 20);
+  m_log.print(nullptr, 0, LEVEL_INFO "screen switch at %d,%d", 10, 20);
+
+  const auto message = capture->m_message;
+  const auto writes = capture->m_writes;
+  m_log.pop_front();
+  m_log.setFilter(previousFilter);
+
+  QCOMPARE(writes, 1);
+  QVERIFY(message.endsWith(QStringLiteral("INFO: screen switch at 10,20")));
 }
 
 QTEST_MAIN(LogTests)

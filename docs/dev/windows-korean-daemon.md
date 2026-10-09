@@ -85,6 +85,8 @@ upstream MSVC setup, Qt/vcpkg dependency installation, CMake, CTest and WiX/CPac
 It builds Windows x64, runs the complete unit-test suite, then packages and
 uploads the MSI plus test diagnostics. The existing all-platform CI is retained.
 No release or upstream pull request is created.
+Detailed Qt JUnit reports for the two regression suites are also uploaded so
+individual data rows can be audited independently of the CTest suite summary.
 
 The upstream portable ZIP deliberately omits `deskflow-daemon.exe` and cannot
 validate daemon/login-screen behavior. Use the MSI artifact for service testing.
@@ -122,3 +124,5 @@ Known unchanged limitations: the IPC protocol uses `=` and newline as separators
 paths containing those characters are not addressed by this patch. UNC-path
 rejection remains in force. Existing Win32 executable-path and filesystem limits
 still apply. Test installers are unsigned unless signing is separately configured.
+The GUI and daemon require matching version/Git SHA values for their IPC handshake;
+install the GUI, Core and daemon from the same test MSI.

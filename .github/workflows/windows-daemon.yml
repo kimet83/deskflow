@@ -42,7 +42,7 @@ jobs:
         run: >-
           cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
           -DBUILD_TESTS=ON -DSKIP_BUILD_TESTS=ON -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
-          -DPACKAGE_VERSION_LABEL=1.27.0-korean-daemon-${{ github.run_number }}
+          "-DPACKAGE_VERSION_LABEL=1.27.0-korean-daemon-${{ github.run_number }}"
           ${{ steps.deps.outputs.vcpkg-cmake-config }}
 
       - name: Build
@@ -52,6 +52,16 @@ jobs:
         env:
           QT_QPA_PLATFORM: offscreen
         run: ctest --test-dir build/src/unittests --output-on-failure --output-junit "${{ github.workspace }}/windows-test-results.xml"
+
+      - name: Detailed regression reports
+        env:
+          QT_QPA_PLATFORM: offscreen
+        shell: pwsh
+        run: |
+          & ./build/src/unittests/base/LogTests.exe -o log-regression.xml,junit
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & ./build/src/unittests/platform/MSWindowsProcessTests.exe -o process-regression.xml,junit
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Package MSI and portable ZIP
         run: cmake --build build --config Release --target package
@@ -70,4 +80,6 @@ jobs:
           name: windows-daemon-test-results
           path: |
             windows-test-results.xml
+            log-regression.xml
+            process-regression.xml
             build/src/unittests/Testing/Temporary/LastTest.log

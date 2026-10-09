@@ -57,7 +57,7 @@ private:
   HANDLE m_stdError;
   HANDLE m_outputPipe = nullptr;
   HANDLE m_errorPipe = nullptr;
-  PROCESS_INFORMATION m_info;
+  PROCESS_INFORMATION m_info = {};
   BOOL m_createProcessResult = FALSE;
 };
 

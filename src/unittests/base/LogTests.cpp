@@ -6,6 +6,7 @@
  */
 
 #include "LogTests.h"
+#include "base/ILogOutputter.h"
 #include <clocale>
 #include <iostream>
 #include <sstream>
@@ -13,6 +14,25 @@
 #define LEVEL_PRINT "%z\057"
 #define LEVEL_ERR "%z\061"
 #define LEVEL_INFO "%z\063"
+
+namespace {
+class CapturingLogOutputter : public ILogOutputter
+{
+public:
+  void open(const QString &) override
+  {
+  }
+  void close() override
+  {
+  }
+  bool write(LogLevel::Level, const QString &message) override
+  {
+    m_message = message;
+    return false;
+  }
+  QString m_message;
+};
+} // namespace
 
 QString sanitizeBuffer(const std::stringstream &in)
 {
@@ -136,7 +156,7 @@ void LogTests::printBufferBoundary()
   std::streambuf *old = std::cout.rdbuf(buffer.rdbuf());
   m_log.print(nullptr, 0, LEVEL_PRINT "%s", message.c_str());
   std::cout.rdbuf(old);
-  QCOMPARE(buffer.str(), message);
+  QCOMPARE(buffer.str(), message + "\n");
 }
 
 void LogTests::printWideEncodingError()
@@ -161,11 +181,13 @@ void LogTests::printWideEncodingError()
 void LogTests::printUtf8Command()
 {
   const auto command = QString::fromWCharArray(L"C:\\Users\\\uD608\uC561\uAC80\uC0AC").toUtf8();
-  std::stringstream buffer;
-  std::streambuf *old = std::cout.rdbuf(buffer.rdbuf());
+  // Capture before console output converts to the host's local code page.
+  auto *capture = new CapturingLogOutputter; // Adopted by Log.
+  m_log.insert(capture);
   m_log.print(nullptr, 0, LEVEL_PRINT "%s", command.constData());
-  std::cout.rdbuf(old);
-  QCOMPARE(QByteArray::fromStdString(buffer.str()), command);
+  const auto message = capture->m_message;
+  m_log.pop_front();
+  QCOMPARE(message.toUtf8(), command);
 }
 
 QTEST_MAIN(LogTests)
